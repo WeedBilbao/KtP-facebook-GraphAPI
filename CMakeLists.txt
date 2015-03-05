@@ -19,7 +19,7 @@ else()
     find_package(TelepathyQt5 0.9.5 REQUIRED)
     find_package(TelepathyQt5Service 0.9.5 REQUIRED)
 
-    find_package(Qt5 REQUIRED COMPONENTS Core DBus)
+    find_package(Qt5 REQUIRED COMPONENTS Core DBus Network Xml)
 endif()
 
 include(GNUInstallDirs)
