@@ -34,30 +34,31 @@ set(simplecm_HEADERS
 )
 
 set(simplecm_SOURCES
+    main.cpp
     connection.cpp
     protocol.cpp
     textchannel.cpp
 )
 
-add_library(simplecm-qt${QT_VERSION_MAJOR} STATIC ${simplecm_SOURCES} ${simplecm_HEADERS})
+add_executable(simplecm-qt ${simplecm_SOURCES})
 
 if (USE_QT4)
-    target_include_directories(simplecm-qt${QT_VERSION_MAJOR} PRIVATE
+    target_include_directories(simplecm-qt PRIVATE
         ${QT_INCLUDES}
         ${TELEPATHY_QT4_INCLUDE_DIR}
     )
-    target_link_libraries(simplecm-qt${QT_VERSION_MAJOR}
+    target_link_libraries(simplecm-qt
         ${QT_QTCORE_LIBRARY}
         ${QT_QTDBUS_LIBRARY}
         ${TELEPATHY_QT4_LIBRARIES}
         ${TELEPATHY_QT4_SERVICE_LIBRARIES}
     )
 else()
-    target_include_directories(simplecm-qt${QT_VERSION_MAJOR} PRIVATE
+    target_include_directories(simplecm-qt PRIVATE
         ${TELEPATHY_QT5_INCLUDE_DIR}
     )
 
-    target_link_libraries(simplecm-qt${QT_VERSION_MAJOR}
+    target_link_libraries(simplecm-qt
         Qt5::Core
         Qt5::DBus
         ${TELEPATHY_QT5_LIBRARIES}
@@ -65,22 +66,22 @@ else()
     )
 endif()
 
-set_target_properties(simplecm-qt${QT_VERSION_MAJOR} PROPERTIES AUTOMOC TRUE)
+set_target_properties(simplecm-qt PROPERTIES AUTOMOC TRUE)
 
-install(
-    TARGETS simplecm-qt${QT_VERSION_MAJOR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    COMPONENT Library
-)
-
-install(
-    FILES ${simplecm_HEADERS}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/simplecm
-    COMPONENT Devel
-)
-
-install(
-    DIRECTORY SimpleCM
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    COMPONENT Devel
-)
+# install(
+#     TARGETS simplecm-qt
+#     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+#     COMPONENT Library
+# )
+#
+# install(
+#     FILES ${simplecm_HEADERS}
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/simplecm
+#     COMPONENT Devel
+# )
+#
+# install(
+#     DIRECTORY SimpleCM
+#     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+#     COMPONENT Devel
+# )
