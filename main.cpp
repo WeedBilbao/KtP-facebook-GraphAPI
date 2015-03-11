@@ -15,11 +15,11 @@ int main(int argc, char *argv[])
     Tp::enableDebug(true);
     Tp::enableWarnings(true);
 
-    Tp::BaseProtocolPtr proto = Tp::BaseProtocol::create<SimpleProtocol>(QLatin1String("simplecm"));
-    Tp::BaseConnectionManagerPtr cm = Tp::BaseConnectionManager::create(QLatin1String("simplecm"));
+    Tp::BaseProtocolPtr proto = Tp::BaseProtocol::create<SimpleProtocol>(QLatin1String("simplecmFB"));
+    Tp::BaseConnectionManagerPtr cm = Tp::BaseConnectionManager::create(QLatin1String("simplecmFB"));
 
-    proto->setEnglishName(QLatin1String("SimpleCM"));
-    proto->setIconName(QLatin1String("simplecm"));
+    proto->setEnglishName(QLatin1String("SimpleCMFB"));
+    proto->setIconName(QLatin1String("simplecmFB"));
 
     cm->addProtocol(proto);
     cm->registerObject();

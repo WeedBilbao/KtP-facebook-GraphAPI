@@ -19,6 +19,11 @@
 #include <TelepathyQt/BaseChannel>
 
 #include <QDateTime>
+#include <QNetworkAccessManager>
+#include <QNetworkReply>
+#include <QNetworkRequest>
+#include<iostream>
+using namespace std;
 
 #include <QDebug>
 
@@ -54,9 +59,9 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     contactsIface = Tp::BaseConnectionContactsInterface::create();
     contactsIface->setGetContactAttributesCallback(Tp::memFun(this, &SimpleConnection::getContactAttributes));
     contactsIface->setContactAttributeInterfaces(QStringList()
-                                                 << TP_QT_IFACE_CONNECTION
-                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
-                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
+            << TP_QT_IFACE_CONNECTION
+            << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
+            << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
     plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(contactsIface));
 
     /* Connection.Interface.SimplePresence */
@@ -91,6 +96,21 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     setInspectHandlesCallback(Tp::memFun(this, &SimpleConnection::inspectHandles));
     setCreateChannelCallback(Tp::memFun(this, &SimpleConnection::createChannel));
     setRequestHandlesCallback(Tp::memFun(this, &SimpleConnection::requestHandles));
+
+
+    //MI COSAAAAAAAAA
+    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+    connect(manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(replyFinished(QNetworkReply*)));
+
+    QNetworkRequest request;
+    request.setUrl(QUrl("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBAKHzr9815oeREV5oAUNSYJSxt8BREbHBqCbhQoDeJjnPhlnc9Up4X3ZCZBrOpYolUqgjCjLyBZCAAAWpwHZAdBXtcUUDo71MmGMn6VrZAtwJWe5nZAq5mui9zCGW4zUw8xfC01XuZA2B9tuitUCkFRxMbFPI089FZA5qQTrofKc6QNiaaLpFtXtYgs5CKvWwZCxfFw8bwnpqx"));
+    request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
+
+    QNetworkReply *reply = manager->get(request);
+    connect(reply, SIGNAL(readyRead()), this, SLOT(slotReadyRead()));
+    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),this, SLOT(slotError(QNetworkReply::NetworkError)));
+    connect(reply, SIGNAL(sslErrors(QList<QSslError>)),this, SLOT(slotSslErrors(QList<QSslError>)));
+    cout << reply;
 }
 
 SimpleConnection::~SimpleConnection()
@@ -146,8 +166,8 @@ Tp::BaseChannelPtr SimpleConnection::createChannel(const QString &channelType, u
              << " " << targetHandle;
 
     if ((targetHandleType != Tp::HandleTypeContact) || (targetHandle == 0)) {
-          error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("createChannel error"));
-          return Tp::BaseChannelPtr();
+        error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("createChannel error"));
+        return Tp::BaseChannelPtr();
     }
 
     Tp::BaseChannelPtr baseChannel = Tp::BaseChannel::create(this, channelType, targetHandle, targetHandleType);
@@ -176,13 +196,13 @@ Tp::UIntList SimpleConnection::requestHandles(uint handleType, const QStringList
     }
 
     foreach(const QString &identify, identifiers) {
-         uint handle = m_handles.key(identify, 0);
-         if (handle) {
-             result.append(handle);
-         } else {
-             result.append(addContact(identify));
-         }
-     }
+        uint handle = m_handles.key(identify, 0);
+        if (handle) {
+            result.append(handle);
+        } else {
+            result.append(addContact(identify));
+        }
+    }
 
     return result;
 }
@@ -216,7 +236,7 @@ Tp::ContactAttributesMap SimpleConnection::getContactAttributes(const Tp::UIntLi
     Tp::ContactAttributesMap contactAttributes;
 
     foreach (const uint handle, handles) {
-        if (m_handles.contains(handle)){
+        if (m_handles.contains(handle)) {
             QVariantMap attributes;
             attributes[TP_QT_IFACE_CONNECTION + QLatin1String("/contact-id")] = m_handles.value(handle);
 
@@ -338,8 +358,8 @@ void SimpleConnection::receiveMessage(const QString &sender, const QString &mess
     Tp::DBusError error;
     bool yours;
     Tp::BaseChannelPtr channel = ensureChannel(TP_QT_IFACE_CHANNEL_TYPE_TEXT, handleType, targetHandle, yours,
-                                           senderHandle,
-                                           false, &error);
+                                 senderHandle,
+                                 false, &error);
     if (error.isValid()) {
         qWarning() << "ensureChannel failed:" << error.name() << " " << error.message();
         return;
