@@ -190,7 +190,7 @@ QStringList SimpleConnection::inspectHandles(uint handleType, const Tp::UIntList
     return result;
 }
 
-Tp::BaseChannelPtr SimpleConnection::createChannel(const QString &channelType, uint targetHandleType, uint targetHandle, Tp::DBusError *error)
+Tp::BaseChannelPtr SimpleConnection::createChannel(const QString &channelType, uint targetHandleType, uint targetHandle, const QVariantMap &request, Tp::DBusError *error)
 {
     qDebug() << "SimpleConnection::createChannel " << channelType
              << " " << targetHandleType
@@ -389,8 +389,7 @@ void SimpleConnection::receiveMessage(const QString &sender, const QString &mess
     Tp::DBusError error;
     bool yours;
     Tp::BaseChannelPtr channel = ensureChannel(TP_QT_IFACE_CHANNEL_TYPE_TEXT, handleType, targetHandle, yours,
-                                 senderHandle,
-                                 false, &error);
+                                 senderHandle, false, QVariantMap(), &error);
     if (error.isValid()) {
         qWarning() << "ensureChannel failed:" << error.name() << " " << error.message();
         return;
