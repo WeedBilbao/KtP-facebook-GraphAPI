@@ -22,8 +22,13 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
-#include<iostream>
+#include <iostream>
 using namespace std;
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QString>
+#include <QJsonArray>
 
 #include <QDebug>
 
@@ -99,18 +104,44 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
 
 
     //MI COSAAAAAAAAA
-    QNetworkAccessManager *manager = new QNetworkAccessManager(this);
-    connect(manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(replyFinished(QNetworkReply*)));
 
+    QNetworkAccessManager networkManager;
+
+    QUrl url("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBACZAIzV42IVa7ZArVyasTE9BAxu0L3OtTcRI2dWUWWv6f3hnMPtHu4DFDAdg9qCDqvZCT7A3RqhfVtlaU5NYaCcpHr12biFYngVsH4WjLYhcigRI7376262AuL6obxCKXU3pm2EiZCV4Y1ZAPRVKfvDpFqLiThzg12s5zRx2O4FZA80buNcU9XL2HMM7l4bhxOLFuPoPjT");
     QNetworkRequest request;
-    request.setUrl(QUrl("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBAKHzr9815oeREV5oAUNSYJSxt8BREbHBqCbhQoDeJjnPhlnc9Up4X3ZCZBrOpYolUqgjCjLyBZCAAAWpwHZAdBXtcUUDo71MmGMn6VrZAtwJWe5nZAq5mui9zCGW4zUw8xfC01XuZA2B9tuitUCkFRxMbFPI089FZA5qQTrofKc6QNiaaLpFtXtYgs5CKvWwZCxfFw8bwnpqx"));
-    request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
+    request.setUrl(url);
 
-    QNetworkReply *reply = manager->get(request);
-    connect(reply, SIGNAL(readyRead()), this, SLOT(slotReadyRead()));
-    connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),this, SLOT(slotError(QNetworkReply::NetworkError)));
-    connect(reply, SIGNAL(sslErrors(QList<QSslError>)),this, SLOT(slotSslErrors(QList<QSslError>)));
-    cout << reply;
+    QNetworkReply* currentReply = networkManager.get(request);  // GET
+    connect(&networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onResult(QNetworkReply*)));
+
+
+//     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
+//     connect(manager, SIGNAL(finished(QNetworkReply*)),this, SLOT(replyFinished(QNetworkReply*)));
+//
+//     QNetworkRequest request;
+//     request.setUrl(QUrl("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBAKHzr9815oeREV5oAUNSYJSxt8BREbHBqCbhQoDeJjnPhlnc9Up4X3ZCZBrOpYolUqgjCjLyBZCAAAWpwHZAdBXtcUUDo71MmGMn6VrZAtwJWe5nZAq5mui9zCGW4zUw8xfC01XuZA2B9tuitUCkFRxMbFPI089FZA5qQTrofKc6QNiaaLpFtXtYgs5CKvWwZCxfFw8bwnpqx"));
+//     request.setRawHeader("User-Agent", "MyOwnBrowser 1.0");
+//
+//     QNetworkReply *reply = manager->get(request);
+//     connect(reply, SIGNAL(readyRead()), this, SLOT(slotReadyRead()));
+//     connect(reply, SIGNAL(error(QNetworkReply::NetworkError)),this, SLOT(slotError(QNetworkReply::NetworkError)));
+//     connect(reply, SIGNAL(sslErrors(QList<QSslError>)),this, SLOT(slotSslErrors(QList<QSslError>)));
+//     cout << reply;
+}
+
+void SimpleConnection::onResult(QNetworkReply* reply)
+{
+    QString data = (QString) reply->readAll();
+
+    QJsonDocument jsonResponse = QJsonDocument::fromJson(data.toUtf8());
+    QJsonObject jsonObject = jsonResponse.object();
+    QJsonArray jsonArray = jsonObject["data"].toArray();
+
+    foreach (const QJsonValue & value, jsonArray) {
+        QJsonObject obj = value.toObject();
+        qDebug() << obj["permission"].toString();
+	qDebug() << obj["status"].toString();
+    }
 }
 
 SimpleConnection::~SimpleConnection()

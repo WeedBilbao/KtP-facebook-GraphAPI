@@ -18,6 +18,7 @@
 
 #include <TelepathyQt/BaseConnection>
 #include <TelepathyQt/BaseChannel>
+#include <QNetworkReply>
 
 class SIMPLECM_EXPORT SimpleConnection : public Tp::BaseConnection
 {
@@ -27,8 +28,11 @@ public:
             const QString &cmName, const QString &protocolName,
             const QVariantMap &parameters);
     ~SimpleConnection();
-
+    
     static Tp::SimpleStatusSpecMap getSimpleStatusSpecMap();
+    
+    //MI COSAAAA
+    void onResult(QNetworkReply* reply);
 
     void connectCallback(Tp::DBusError *error);
     QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
