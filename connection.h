@@ -28,11 +28,8 @@ public:
             const QString &cmName, const QString &protocolName,
             const QVariantMap &parameters);
     ~SimpleConnection();
-    
+
     static Tp::SimpleStatusSpecMap getSimpleStatusSpecMap();
-    
-    //MI COSAAAA
-    void onResult(QNetworkReply* reply);
 
     void connectCallback(Tp::DBusError *error);
     QStringList inspectHandles(uint handleType, const Tp::UIntList &handles, Tp::DBusError *error);
@@ -52,6 +49,9 @@ public:
 public slots:
     void receiveMessage(const QString &sender, const QString &message);
 
+    //MI COSAAAA
+    void onResult(QNetworkReply* reply);
+
     uint addContact(const QString &identifier);
     uint addContacts(const QStringList &identifiers);
 
@@ -60,9 +60,13 @@ public slots:
 
 signals:
     void messageReceived(const QString &sender, const QString &message);
-
+    
+    //MI COSAAAA
+    void finished(QNetworkReply*);
+    
 private:
     uint getHandle(const QString &identifier) const;
+    QNetworkAccessManager networkManager;
 
     void setPresenceState(const QList<uint> &handles, const QString &status);
     void setSubscriptionState(const QStringList &identifiers, const QList<uint> &handles, uint state);

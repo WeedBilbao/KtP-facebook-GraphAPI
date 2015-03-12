@@ -19,6 +19,8 @@
 #include <TelepathyQt/BaseChannel>
 
 #include <QDateTime>
+
+#include <QDateTime>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -29,6 +31,7 @@ using namespace std;
 #include <QJsonObject>
 #include <QString>
 #include <QJsonArray>
+
 
 #include <QDebug>
 
@@ -64,9 +67,9 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     contactsIface = Tp::BaseConnectionContactsInterface::create();
     contactsIface->setGetContactAttributesCallback(Tp::memFun(this, &SimpleConnection::getContactAttributes));
     contactsIface->setContactAttributeInterfaces(QStringList()
-            << TP_QT_IFACE_CONNECTION
-            << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
-            << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
+                                                 << TP_QT_IFACE_CONNECTION
+                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
+                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
     plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(contactsIface));
 
     /* Connection.Interface.SimplePresence */
@@ -102,12 +105,11 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     setCreateChannelCallback(Tp::memFun(this, &SimpleConnection::createChannel));
     setRequestHandlesCallback(Tp::memFun(this, &SimpleConnection::requestHandles));
 
-
     //MI COSAAAAAAAAA
+    qDebug() << "hola caracola";
 
-    QNetworkAccessManager networkManager;
 
-    QUrl url("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBACZAIzV42IVa7ZArVyasTE9BAxu0L3OtTcRI2dWUWWv6f3hnMPtHu4DFDAdg9qCDqvZCT7A3RqhfVtlaU5NYaCcpHr12biFYngVsH4WjLYhcigRI7376262AuL6obxCKXU3pm2EiZCV4Y1ZAPRVKfvDpFqLiThzg12s5zRx2O4FZA80buNcU9XL2HMM7l4bhxOLFuPoPjT");
+    QUrl url("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBAL656epcNQU8H9roF2ZBYKwZCGqqbOArJDtK3gasRb5dsXUpOvoZAPQeVdtkzD2gHOat8tBZATbzTym4sZAOhP08odO5sZCF87qt3unDIMoZCUuVHYsZCxqeq2YqulgZBX3vpZALSHaZCfltZCmr57UsiIp8WGDyAvsEZBwe491lC5IZBL50ICEr5mXoccbIC7K5se1csMSSrfSewv");
     QNetworkRequest request;
     request.setUrl(url);
 
@@ -133,6 +135,8 @@ void SimpleConnection::onResult(QNetworkReply* reply)
 {
     QString data = (QString) reply->readAll();
 
+    qDebug() << "hola caracola" << data;
+
     QJsonDocument jsonResponse = QJsonDocument::fromJson(data.toUtf8());
     QJsonObject jsonObject = jsonResponse.object();
     QJsonArray jsonArray = jsonObject["data"].toArray();
@@ -140,7 +144,7 @@ void SimpleConnection::onResult(QNetworkReply* reply)
     foreach (const QJsonValue & value, jsonArray) {
         QJsonObject obj = value.toObject();
         qDebug() << obj["permission"].toString();
-	qDebug() << obj["status"].toString();
+    qDebug() << obj["status"].toString();
     }
 }
 
@@ -197,8 +201,8 @@ Tp::BaseChannelPtr SimpleConnection::createChannel(const QString &channelType, u
              << " " << targetHandle;
 
     if ((targetHandleType != Tp::HandleTypeContact) || (targetHandle == 0)) {
-        error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("createChannel error"));
-        return Tp::BaseChannelPtr();
+          error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("createChannel error"));
+          return Tp::BaseChannelPtr();
     }
 
     Tp::BaseChannelPtr baseChannel = Tp::BaseChannel::create(this, channelType, targetHandle, targetHandleType);
@@ -227,13 +231,13 @@ Tp::UIntList SimpleConnection::requestHandles(uint handleType, const QStringList
     }
 
     foreach(const QString &identify, identifiers) {
-        uint handle = m_handles.key(identify, 0);
-        if (handle) {
-            result.append(handle);
-        } else {
-            result.append(addContact(identify));
-        }
-    }
+         uint handle = m_handles.key(identify, 0);
+         if (handle) {
+             result.append(handle);
+         } else {
+             result.append(addContact(identify));
+         }
+     }
 
     return result;
 }
@@ -267,7 +271,7 @@ Tp::ContactAttributesMap SimpleConnection::getContactAttributes(const Tp::UIntLi
     Tp::ContactAttributesMap contactAttributes;
 
     foreach (const uint handle, handles) {
-        if (m_handles.contains(handle)) {
+        if (m_handles.contains(handle)){
             QVariantMap attributes;
             attributes[TP_QT_IFACE_CONNECTION + QLatin1String("/contact-id")] = m_handles.value(handle);
 
@@ -389,7 +393,8 @@ void SimpleConnection::receiveMessage(const QString &sender, const QString &mess
     Tp::DBusError error;
     bool yours;
     Tp::BaseChannelPtr channel = ensureChannel(TP_QT_IFACE_CHANNEL_TYPE_TEXT, handleType, targetHandle, yours,
-                                 senderHandle, false, QVariantMap(), &error);
+                                           senderHandle,
+                                           false, QVariantMap(), &error);
     if (error.isValid()) {
         qWarning() << "ensureChannel failed:" << error.name() << " " << error.message();
         return;
