@@ -46,6 +46,8 @@ SimpleProtocol::SimpleProtocol(const QDBusConnection &dbusConnection, const QStr
     presenceIface = Tp::BaseProtocolPresenceInterface::create();
     presenceIface->setStatuses(Tp::PresenceSpecList(SimpleConnection::getSimpleStatusSpecMap()));
     plugInterface(Tp::AbstractProtocolInterfacePtr::dynamicCast(presenceIface));
+
+    m_connectionManagerName = "somename";
 }
 
 SimpleProtocol::~SimpleProtocol()
