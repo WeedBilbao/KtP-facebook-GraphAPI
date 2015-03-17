@@ -45,18 +45,19 @@ public:
     uint setPresence(const QString &status, const QString &message, Tp::DBusError *error);
 
     uint ensureContact(const QString &identifier);
+    
 
 public slots:
     void receiveMessage(const QString &sender, const QString &message);
-
-    //MI COSAAAA
-    void onResult(QNetworkReply* reply);
 
     uint addContact(const QString &identifier);
     uint addContacts(const QStringList &identifiers);
 
     void setContactList(const QStringList &identifiers);
     void setContactPresence(const QString &identifier, const QString &presence);
+    
+    //MI COSAAAA
+    void onResult(QNetworkReply* reply);
 
 signals:
     void messageReceived(const QString &sender, const QString &message);
@@ -67,6 +68,7 @@ signals:
 private:
     uint getHandle(const QString &identifier) const;
     QNetworkAccessManager networkManager;
+    QStringList myContanctsList;
 
     void setPresenceState(const QList<uint> &handles, const QString &status);
     void setSubscriptionState(const QStringList &identifiers, const QList<uint> &handles, uint state);

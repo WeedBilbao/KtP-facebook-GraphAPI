@@ -109,7 +109,7 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     qDebug() << "hola caracola";
 
 
-    QUrl url("https://graph.facebook.com/V2.2/me/permissions?access_token=CAACEdEose0cBAL656epcNQU8H9roF2ZBYKwZCGqqbOArJDtK3gasRb5dsXUpOvoZAPQeVdtkzD2gHOat8tBZATbzTym4sZAOhP08odO5sZCF87qt3unDIMoZCUuVHYsZCxqeq2YqulgZBX3vpZALSHaZCfltZCmr57UsiIp8WGDyAvsEZBwe491lC5IZBL50ICEr5mXoccbIC7K5se1csMSSrfSewv");
+    QUrl url("https://graph.facebook.com/v2.2/me/taggable_friends?access_token=CAAXDBLOkIkIBAIuDENAHRdldNhDZA2ZBDHeyVvKEXmRBFQRHXsXJiT5KHDBKxIXakZCq7p0WfZB28f64jZCZAnbiG9PSdAm2wd0PZBQ492ZByzwDXNpp7qagSZAww6DqbmlsErqZCSvzvCiAONy1W4AZABZBchke1Bu0tvD9ZCBhZAhvpFeXIbanED7YZB1pqv0spCFwcSo3JDLkGFA73jfiQyZC9f6r");
     QNetworkRequest request;
     request.setUrl(url);
 
@@ -143,8 +143,9 @@ void SimpleConnection::onResult(QNetworkReply* reply)
 
     foreach (const QJsonValue & value, jsonArray) {
         QJsonObject obj = value.toObject();
-        qDebug() << obj["permission"].toString();
-    qDebug() << obj["status"].toString();
+        qDebug() << obj["name"].toString();
+	myContanctsList.append(obj["name"].toString());
+	//qDebug() << obj["status"].toString();
     }
 }
 
@@ -427,20 +428,36 @@ void SimpleConnection::receiveMessage(const QString &sender, const QString &mess
 
 void SimpleConnection::setContactList(const QStringList &identifiers)
 {
+    QUrl url("https://graph.facebook.com/v2.2/me/taggable_friends?access_token=CAAXDBLOkIkIBAIuDENAHRdldNhDZA2ZBDHeyVvKEXmRBFQRHXsXJiT5KHDBKxIXakZCq7p0WfZB28f64jZCZAnbiG9PSdAm2wd0PZBQ492ZByzwDXNpp7qagSZAww6DqbmlsErqZCSvzvCiAONy1W4AZABZBchke1Bu0tvD9ZCBhZAhvpFeXIbanED7YZB1pqv0spCFwcSo3JDLkGFA73jfiQyZC9f6r");
+    QNetworkRequest request;
+    request.setUrl(url);
+    
+    QNetworkReply* currentReply = networkManager.get(request);  // GET
+    connect(&networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onResult(QNetworkReply*)));  
+  
+    qDebug() << "ESTOY AQIUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII";
+    
+    
     // Actually it don't clear previous list (not implemented yet)
-    addContacts(identifiers);
+    //addContacts(identifiers);
+    addContacts(myContanctsList);
 
-//    Tp::ContactSubscriptionMap changes;
-//    Tp::HandleIdentifierMap identifiers;
-//    Tp::HandleIdentifierMap removals;
+//     Tp::ContactSubscriptionMap changes;
+//     Tp::HandleIdentifierMap identifiers;
+//     Tp::HandleIdentifierMap removals;
 
     QList<uint> handles;
 
-    for (int i = 0; i < identifiers.count(); ++i) {
-        handles.append(ensureContact(identifiers.at(i)));
+//     for (int i = 0; i < identifiers.count(); ++i) {
+//         handles.append(ensureContact(identifiers.at(i)));
+//     }
+// 
+//     setSubscriptionState(identifiers, handles, Tp::SubscriptionStateYes);
+    for (int i = 0; i < myContanctsList.count(); ++i) {
+        handles.append(ensureContact(myContanctsList.at(i)));
     }
 
-    setSubscriptionState(identifiers, handles, Tp::SubscriptionStateYes);
+    setSubscriptionState(myContanctsList, handles, Tp::SubscriptionStateYes);
 }
 
 void SimpleConnection::setContactPresence(const QString &identifier, const QString &presence)
