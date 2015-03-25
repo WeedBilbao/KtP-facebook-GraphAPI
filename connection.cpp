@@ -67,9 +67,10 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     contactsIface = Tp::BaseConnectionContactsInterface::create();
     contactsIface->setGetContactAttributesCallback(Tp::memFun(this, &SimpleConnection::getContactAttributes));
     contactsIface->setContactAttributeInterfaces(QStringList()
-                                                 << TP_QT_IFACE_CONNECTION
-                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
-                                                 << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE);
+            << TP_QT_IFACE_CONNECTION
+            << TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST
+            << TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE
+	    << TP_QT_IFACE_CONNECTION_INTERFACE_ALIASING);
     plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(contactsIface));
 
     /* Connection.Interface.SimplePresence */
@@ -82,6 +83,11 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     contactListIface->setGetContactListAttributesCallback(Tp::memFun(this, &SimpleConnection::getContactListAttributes));
 //    contactListIface->setRequestSubscriptionCallback(Tp::memFun(this, &SimpleConnection::requestSubscription));
     plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(contactListIface));
+    
+    aliasingIface = Tp::BaseConnectionAliasingInterface::create();
+    aliasingIface->setGetAliasesCallback(Tp::memFun(this, &SimpleConnection::getAliases));
+    //aliasingIface->setSetAliasesCallback(Tp::memFun(this, &SimpleConnection::setAliases));
+    plugInterface(Tp::AbstractConnectionInterfacePtr::dynamicCast(aliasingIface));
 
     /* Connection.Interface.Requests */
     requestsIface = Tp::BaseConnectionRequestsInterface::create(this);
@@ -106,15 +112,17 @@ SimpleConnection::SimpleConnection(const QDBusConnection &dbusConnection, const 
     setRequestHandlesCallback(Tp::memFun(this, &SimpleConnection::requestHandles));
 
     //MI COSAAAAAAAAA
-    qDebug() << "hola caracola";
+//     qDebug() << "hola caracola";
+//
+//
+//     QUrl url("https://graph.facebook.com/v2.2/me/taggable_friends?access_token=CAAXDBLOkIkIBAIuDENAHRdldNhDZA2ZBDHeyVvKEXmRBFQRHXsXJiT5KHDBKxIXakZCq7p0WfZB28f64jZCZAnbiG9PSdAm2wd0PZBQ492ZByzwDXNpp7qagSZAww6DqbmlsErqZCSvzvCiAONy1W4AZABZBchke1Bu0tvD9ZCBhZAhvpFeXIbanED7YZB1pqv0spCFwcSo3JDLkGFA73jfiQyZC9f6r");
+//     QNetworkRequest request;
+//     request.setUrl(url);
+//
+//     QNetworkReply* currentReply = networkManager.get(request);  // GET
+//     connect(&networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onResult(QNetworkReply*)));
+    
 
-
-    QUrl url("https://graph.facebook.com/v2.2/me/taggable_friends?access_token=CAAXDBLOkIkIBAIuDENAHRdldNhDZA2ZBDHeyVvKEXmRBFQRHXsXJiT5KHDBKxIXakZCq7p0WfZB28f64jZCZAnbiG9PSdAm2wd0PZBQ492ZByzwDXNpp7qagSZAww6DqbmlsErqZCSvzvCiAONy1W4AZABZBchke1Bu0tvD9ZCBhZAhvpFeXIbanED7YZB1pqv0spCFwcSo3JDLkGFA73jfiQyZC9f6r");
-    QNetworkRequest request;
-    request.setUrl(url);
-
-    QNetworkReply* currentReply = networkManager.get(request);  // GET
-    connect(&networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onResult(QNetworkReply*)));
 
 
 //     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
@@ -135,18 +143,37 @@ void SimpleConnection::onResult(QNetworkReply* reply)
 {
     QString data = (QString) reply->readAll();
 
-    qDebug() << "hola caracola" << data;
+    //qDebug() << "hola caracola" << data;
 
     QJsonDocument jsonResponse = QJsonDocument::fromJson(data.toUtf8());
     QJsonObject jsonObject = jsonResponse.object();
     QJsonArray jsonArray = jsonObject["data"].toArray();
 
+    myContanctsList.clear();
+    myContanctsListAliases.clear();
+
+
     foreach (const QJsonValue & value, jsonArray) {
         QJsonObject obj = value.toObject();
         qDebug() << obj["name"].toString();
-	myContanctsList.append(obj["name"].toString());
-	//qDebug() << obj["status"].toString();
+        myContanctsList.append(obj["id"].toString());
+	myContanctsListAliases.append(obj["name"].toString());
+        //qDebug() << obj["status"].toString();
     }
+    QList<uint> handles;
+
+//     for (int i = 0; i < identifiers.count(); ++i) {
+//         handles.append(ensureContact(identifiers.at(i)));
+//     }
+//
+//     setSubscriptionState(identifiers, handles, Tp::SubscriptionStateYes);
+    for (int i = 0; i < myContanctsList.count(); ++i) {
+        handles.append(ensureContact(myContanctsList.at(i)));
+    }
+
+    setSubscriptionState(myContanctsList, handles, Tp::SubscriptionStateYes);
+    updateContactsState(myContanctsList);
+    contactListIface->setContactListState(Tp::ContactListStateSuccess);
 }
 
 SimpleConnection::~SimpleConnection()
@@ -166,6 +193,8 @@ void SimpleConnection::connectCallback(Tp::DBusError *error)
     presence.type = Tp::ConnectionPresenceTypeAvailable;
     presences[selfHandle()] = presence;
     simplePresenceIface->setPresences(presences);
+    qDebug() << "Paso por el connectCallback";
+    setContactList(myContanctsList);
 
     setStatus(Tp::ConnectionStatusConnected, Tp::ConnectionStatusReasonRequested);
 
@@ -202,8 +231,8 @@ Tp::BaseChannelPtr SimpleConnection::createChannel(const QString &channelType, u
              << " " << targetHandle;
 
     if ((targetHandleType != Tp::HandleTypeContact) || (targetHandle == 0)) {
-          error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("createChannel error"));
-          return Tp::BaseChannelPtr();
+        error->set(TP_QT_ERROR_INVALID_HANDLE, QLatin1String("createChannel error"));
+        return Tp::BaseChannelPtr();
     }
 
     Tp::BaseChannelPtr baseChannel = Tp::BaseChannel::create(this, channelType, targetHandle, targetHandleType);
@@ -232,20 +261,20 @@ Tp::UIntList SimpleConnection::requestHandles(uint handleType, const QStringList
     }
 
     foreach(const QString &identify, identifiers) {
-         uint handle = m_handles.key(identify, 0);
-         if (handle) {
-             result.append(handle);
-         } else {
-             result.append(addContact(identify));
-         }
-     }
+        uint handle = m_handles.key(identify, 0);
+        if (handle) {
+            result.append(handle);
+        } else {
+            result.append(addContact(identify));
+        }
+    }
 
     return result;
 }
 
 Tp::ContactAttributesMap SimpleConnection::getContactListAttributes(const QStringList &interfaces, bool hold, Tp::DBusError *error)
 {
-    qDebug() << Q_FUNC_INFO;
+    qDebug() << Q_FUNC_INFO << "ATR";
 
     Tp::ContactAttributesMap contactAttributes;
 
@@ -261,29 +290,43 @@ Tp::ContactAttributesMap SimpleConnection::getContactListAttributes(const QStrin
         contactAttributes[handle] = attributes;
     }
     return contactAttributes;
+
+//     Q_UNUSED(hold);
+//  
+//     Tp::UIntList handles = m_handles.keys();
+//     handles.removeOne(selfHandle());
+//  
+//     return getContactAttributes(handles, interfaces, error);
+  
 }
 
 Tp::ContactAttributesMap SimpleConnection::getContactAttributes(const Tp::UIntList &handles, const QStringList &interfaces, Tp::DBusError *error)
 {
 //    Connection.Interface.Contacts
 //    http://telepathy.freedesktop.org/spec/Connection_Interface_Contacts.html#Method:GetContactAttributes
-    qDebug() << Q_FUNC_INFO << handles;
-
+    qDebug() << Q_FUNC_INFO << handles << interfaces;
+ 
     Tp::ContactAttributesMap contactAttributes;
-
+ 
     foreach (const uint handle, handles) {
         if (m_handles.contains(handle)){
+	    //qDebug() << "DAVID IS HELPING";
             QVariantMap attributes;
             attributes[TP_QT_IFACE_CONNECTION + QLatin1String("/contact-id")] = m_handles.value(handle);
-
+ 
             if (interfaces.contains(TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST)) {
                 attributes[TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST + QLatin1String("/subscribe")] = Tp::SubscriptionStateYes;
                 attributes[TP_QT_IFACE_CONNECTION_INTERFACE_CONTACT_LIST + QLatin1String("/publish")] = Tp::SubscriptionStateYes;
             }
-
+ 
             if (interfaces.contains(TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE)) {
                 attributes[TP_QT_IFACE_CONNECTION_INTERFACE_SIMPLE_PRESENCE + QLatin1String("/presence")] = QVariant::fromValue(getPresence(handle));
             }
+ 
+            if (interfaces.contains(TP_QT_IFACE_CONNECTION_INTERFACE_ALIASING)) {
+                attributes[TP_QT_IFACE_CONNECTION_INTERFACE_ALIASING + QLatin1String("/alias")] = QVariant::fromValue(getAlias(handle));
+            }
+ 
             contactAttributes[handle] = attributes;
         }
     }
@@ -330,8 +373,13 @@ uint SimpleConnection::addContacts(const QStringList &identifiers)
         newHandles << handle;
     }
 
-    setPresenceState(newHandles, QLatin1String("unknown"));
-    setSubscriptionState(identifiers, newHandles, Tp::SubscriptionStateUnknown);
+     setPresenceState(newHandles, QLatin1String("available"));
+//     setSubscriptionState(identifiers, newHandles, Tp::SubscriptionStateYes);
+    
+    setSubscriptionState(identifiers, newHandles, Tp::SubscriptionStateYes);
+    updateContactsState(identifiers);
+
+    contactListIface->setContactListState(Tp::ContactListStateSuccess);
 
     return handle;
 }
@@ -382,6 +430,28 @@ void SimpleConnection::setSubscriptionState(const QStringList &identifiers, cons
     contactListIface->contactsChangedWithID(changes, identifiersMap, removals);
 }
 
+
+//Clase que verifica el estado de cada contacto
+void SimpleConnection::updateContactsState(const QStringList &identifiers)
+{
+    qDebug() << Q_FUNC_INFO;
+    Tp::SimpleContactPresences newPresences;
+    foreach (const QString &fbID, identifiers) {
+        uint handle = ensureContact(fbID);
+
+        Tp::SimplePresence presence;
+
+
+        presence.status = QLatin1String("available");
+        presence.type = Tp::ConnectionPresenceTypeAvailable;
+
+
+        m_presences[handle] = presence;
+        newPresences[handle] = presence;
+    }
+    simplePresenceIface->setPresences(newPresences);
+}
+
 /* Receive message from someone to ourself */
 void SimpleConnection::receiveMessage(const QString &sender, const QString &message)
 {
@@ -394,8 +464,8 @@ void SimpleConnection::receiveMessage(const QString &sender, const QString &mess
     Tp::DBusError error;
     bool yours;
     Tp::BaseChannelPtr channel = ensureChannel(TP_QT_IFACE_CHANNEL_TYPE_TEXT, handleType, targetHandle, yours,
-                                           senderHandle,
-                                           false, QVariantMap(), &error);
+                                 senderHandle,
+                                 false, QVariantMap(), &error);
     if (error.isValid()) {
         qWarning() << "ensureChannel failed:" << error.name() << " " << error.message();
         return;
@@ -431,13 +501,13 @@ void SimpleConnection::setContactList(const QStringList &identifiers)
     QUrl url("https://graph.facebook.com/v2.2/me/taggable_friends?access_token=CAAXDBLOkIkIBAIuDENAHRdldNhDZA2ZBDHeyVvKEXmRBFQRHXsXJiT5KHDBKxIXakZCq7p0WfZB28f64jZCZAnbiG9PSdAm2wd0PZBQ492ZByzwDXNpp7qagSZAww6DqbmlsErqZCSvzvCiAONy1W4AZABZBchke1Bu0tvD9ZCBhZAhvpFeXIbanED7YZB1pqv0spCFwcSo3JDLkGFA73jfiQyZC9f6r");
     QNetworkRequest request;
     request.setUrl(url);
-    
+
     QNetworkReply* currentReply = networkManager.get(request);  // GET
-    connect(&networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onResult(QNetworkReply*)));  
-  
+    connect(&networkManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onResult(QNetworkReply*)));
+
     qDebug() << "ESTOY AQIUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII";
-    
-    
+
+
     // Actually it don't clear previous list (not implemented yet)
     //addContacts(identifiers);
     addContacts(myContanctsList);
@@ -446,18 +516,7 @@ void SimpleConnection::setContactList(const QStringList &identifiers)
 //     Tp::HandleIdentifierMap identifiers;
 //     Tp::HandleIdentifierMap removals;
 
-    QList<uint> handles;
-
-//     for (int i = 0; i < identifiers.count(); ++i) {
-//         handles.append(ensureContact(identifiers.at(i)));
-//     }
-// 
-//     setSubscriptionState(identifiers, handles, Tp::SubscriptionStateYes);
-    for (int i = 0; i < myContanctsList.count(); ++i) {
-        handles.append(ensureContact(myContanctsList.at(i)));
-    }
-
-    setSubscriptionState(myContanctsList, handles, Tp::SubscriptionStateYes);
+    
 }
 
 void SimpleConnection::setContactPresence(const QString &identifier, const QString &presence)
@@ -480,4 +539,32 @@ uint SimpleConnection::getHandle(const QString &identifier) const
     }
 
     return 0;
+}
+
+Tp::AliasMap SimpleConnection::getAliases(const Tp::UIntList &handles, Tp::DBusError *error)
+{
+    qDebug() << Q_FUNC_INFO << handles;
+ 
+    Tp::AliasMap aliases;
+ 
+    foreach (uint handle, handles) {
+        aliases[handle] = getAlias(handle);
+    }
+ 
+    return aliases;
+}
+
+QString SimpleConnection::getAlias(uint handle)
+{
+    const QString fbID = m_handles.value(handle);
+    qDebug() << "Los handles" << handle << m_handles.value(handle);
+     if (fbID.isEmpty()) {
+         return QString();
+     }
+    //qDebug() << "y peta" << myContanctsListAliases;
+    qDebug() << myContanctsList;
+    qDebug() << myContanctsListAliases;
+    if (handle > myContanctsListAliases.size());
+      return "";
+    return myContanctsListAliases.at(handle-1);
 }

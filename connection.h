@@ -43,9 +43,11 @@ public:
 
     Tp::SimplePresence getPresence(uint handle);
     uint setPresence(const QString &status, const QString &message, Tp::DBusError *error);
+    Tp::AliasMap getAliases(const Tp::UIntList &handles, Tp::DBusError *error = 0);
 
     uint ensureContact(const QString &identifier);
-    
+    QString getAlias(uint handle);
+    QStringList myContanctsListAliases;    
 
 public slots:
     void receiveMessage(const QString &sender, const QString &message);
@@ -78,6 +80,7 @@ private:
     Tp::BaseConnectionContactListInterfacePtr contactListIface;
     Tp::BaseConnectionAddressingInterfacePtr addressingIface;
     Tp::BaseConnectionRequestsInterfacePtr requestsIface;
+    Tp::BaseConnectionAliasingInterfacePtr aliasingIface;
 
     Tp::SimpleContactPresences m_presences;
 
@@ -86,6 +89,7 @@ private:
     QHash<uint, uint> m_contactsSubscription;
 
     QString m_selfId;
+    void updateContactsState(const QStringList &identifiers);
 };
 
 #endif // SIMPLECM_CONNECTION_H
