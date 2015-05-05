@@ -47,6 +47,7 @@ public:
 
     uint ensureContact(const QString &identifier);
     QString getAlias(uint handle);
+    QString selfID;
     QStringList myContanctsListAliases;    
 
 public slots:
@@ -60,6 +61,7 @@ public slots:
     
     //MI COSAAAA
     void onResult(QNetworkReply* reply);
+    void onSelfResult(QNetworkReply* reply);
 
 signals:
     void messageReceived(const QString &sender, const QString &message);
@@ -70,10 +72,12 @@ signals:
 private:
     uint getHandle(const QString &identifier) const;
     QNetworkAccessManager networkManager;
+    QNetworkAccessManager networkManager2;
     QStringList myContanctsList;
 
     void setPresenceState(const QList<uint> &handles, const QString &status);
     void setSubscriptionState(const QStringList &identifiers, const QList<uint> &handles, uint state);
+    
 
     Tp::BaseConnectionContactsInterfacePtr contactsIface;
     Tp::BaseConnectionSimplePresenceInterfacePtr simplePresenceIface;

@@ -19,7 +19,8 @@ else()
     find_package(TelepathyQt5 0.9.5 REQUIRED)
     find_package(TelepathyQt5Service 0.9.5 REQUIRED)
 
-    find_package(Qt5 REQUIRED COMPONENTS Core DBus Network Xml)
+    find_package(Qt5 REQUIRED COMPONENTS Core DBus Network Xml WebKit WebKitWidgets)
+    
 endif()
 
 include(GNUInstallDirs)
@@ -52,6 +53,7 @@ if (USE_QT4)
         ${QT_QTDBUS_LIBRARY}
         ${TELEPATHY_QT4_LIBRARIES}
         ${TELEPATHY_QT4_SERVICE_LIBRARIES}
+	
     )
 else()
     target_include_directories(simplecm-qt PRIVATE
@@ -61,6 +63,8 @@ else()
     target_link_libraries(simplecm-qt
         Qt5::Core
         Qt5::DBus
+        Qt5::WebKit
+        Qt5::WebKitWidgets
         ${TELEPATHY_QT5_LIBRARIES}
         ${TELEPATHY_QT5_SERVICE_LIBRARIES}
     )

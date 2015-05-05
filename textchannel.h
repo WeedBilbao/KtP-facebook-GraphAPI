@@ -18,6 +18,10 @@
 
 #include <TelepathyQt/BaseChannel>
 
+#include <QtWebKit>
+#include <QWebView>
+#include <QMouseEvent>
+
 class SimpleTextChannel;
 
 typedef Tp::SharedPtr<SimpleTextChannel> SimpleTextChannelPtr;
@@ -28,11 +32,16 @@ class SIMPLECM_EXPORT SimpleTextChannel : public Tp::BaseChannelTextType
 public:
     static SimpleTextChannelPtr create(Tp::BaseChannel *baseChannel, uint targetHandle, const QString &identifier);
     virtual ~SimpleTextChannel();
+    QWebView view;
 
     QString sendMessageCallback(const Tp::MessagePartList &messageParts, uint flags, Tp::DBusError *error);
 
 signals:
     void messageReceived(const QString &identifier, const QString &content);
+    //void loadFinished(bool asdf);
+    
+public slots:
+    void on_pageLoad_finished(bool ok);
 
 private:
     SimpleTextChannel(Tp::BaseChannel *baseChannel, uint targetHandle, const QString &identifier);

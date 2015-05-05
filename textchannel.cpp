@@ -20,6 +20,10 @@
 
 #include <QLatin1String>
 #include <QVariantMap>
+#include <QtWebKit>
+#include <QtWebKitWidgets>
+#include <QMouseEvent> 	
+#include <QApplication>
 
 #include <QDebug>
 
@@ -34,10 +38,10 @@ SimpleTextChannel::SimpleTextChannel(Tp::BaseChannel *baseChannel, uint targetHa
     uint deliveryReportingSupport = 0;
 
     m_messagesIface = Tp::BaseChannelMessagesInterface::create(this,
-                                                               supportedContentTypes,
-                                                               messageTypes,
-                                                               messagePartSupportFlags,
-                                                               deliveryReportingSupport);
+                      supportedContentTypes,
+                      messageTypes,
+                      messagePartSupportFlags,
+                      deliveryReportingSupport);
 
     baseChannel->plugInterface(Tp::AbstractChannelInterfacePtr::dynamicCast(m_messagesIface));
 
@@ -58,15 +62,40 @@ QString SimpleTextChannel::sendMessageCallback(const Tp::MessagePartList &messag
     QString content;
     for (Tp::MessagePartList::const_iterator i = messageParts.begin()+1; i != messageParts.end(); ++i) {
         if(i->count(QLatin1String("content-type"))
-            && i->value(QLatin1String("content-type")).variant().toString() == QLatin1String("text/plain")
-            && i->count(QLatin1String("content")))
+                && i->value(QLatin1String("content-type")).variant().toString() == QLatin1String("text/plain")
+                && i->count(QLatin1String("content")))
         {
             content = i->value(QLatin1String("content")).variant().toString();
             break;
         }
     }
+   
+   
+    connect(&view, SIGNAL(loadFinished(bool)), this, SLOT(on_pageLoad_finished(bool)));
+    QUrl url("https://www.facebook.com/messages/aleixpol");
+    view.load(url);
+    
+    
+//     QWebElementCollection collection = view->findAllElements("textarea[name=message_body]");
+//     foreach (QWebElement element, collection)
+//         element.setAttribute("value", "Prueba de mandar mensajesss!! Vamos, que funciona! :D");
+//     // find search button
+//     QWebElementCollection sendButton = view->findAllElements("input[id=u_0_r]");
+//     QMouseEvent event0(QEvent::MouseButtonPress, sendButton.at(0).geometry().center(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+
+    
 
     emit messageReceived(m_identifier, content);
 
     return QString();
+}
+
+void SimpleTextChannel::on_pageLoad_finished(bool ok){
+    QWebFrame* frame = view.page()->mainFrame();
+    QWebElementCollection collection = frame->findAllElements("textarea[name=message_body]");
+    foreach (QWebElement element, collection)
+        element.setAttribute("value", "Prueba de mandar mensajesss!! Vamos, que funciona! :D");
+    // find search button
+    QWebElementCollection sendButton = frame->findAllElements("input[id=u_0_r]");
+    QMouseEvent event0(QEvent::MouseButtonPress, sendButton.at(0).geometry().center(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 }
