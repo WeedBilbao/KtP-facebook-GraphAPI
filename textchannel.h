@@ -32,7 +32,7 @@ class SIMPLECM_EXPORT SimpleTextChannel : public Tp::BaseChannelTextType
 public:
     static SimpleTextChannelPtr create(Tp::BaseChannel *baseChannel, uint targetHandle, const QString &identifier);
     virtual ~SimpleTextChannel();
-    QWebView view;
+    QWebView qWebView;
 
     QString sendMessageCallback(const Tp::MessagePartList &messageParts, uint flags, Tp::DBusError *error);
 
@@ -42,6 +42,7 @@ signals:
     
 public slots:
     void on_pageLoad_finished(bool ok);
+    void on_pageLoad_finished2(bool ok);
 
 private:
     SimpleTextChannel(Tp::BaseChannel *baseChannel, uint targetHandle, const QString &identifier);

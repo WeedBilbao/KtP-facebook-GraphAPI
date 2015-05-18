@@ -1,4 +1,4 @@
-#include <QCoreApplication>
+#include <QApplication>
 
 #include <TelepathyQt/BaseConnectionManager>
 #include <TelepathyQt/Constants>
@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication app(argc, argv);
+    QApplication app(argc, argv);
     app.setApplicationName(QLatin1String("telepathy-simplecm"));
 
     Tp::registerTypes();

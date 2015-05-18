@@ -70,10 +70,10 @@ QString SimpleTextChannel::sendMessageCallback(const Tp::MessagePartList &messag
         }
     }
    
-   
-    connect(&view, SIGNAL(loadFinished(bool)), this, SLOT(on_pageLoad_finished(bool)));
-    QUrl url("https://www.facebook.com/messages/aleixpol");
-    view.load(url);
+    QWebView::connect(&qWebView, SIGNAL(loadFinished(bool)), this, SLOT(on_pageLoad_finished(bool)));
+    QUrl url("https://www.facebook.com");
+    qWebView.load(url);
+    qWebView.show();
     
     
 //     QWebElementCollection collection = view->findAllElements("textarea[name=message_body]");
@@ -91,11 +91,26 @@ QString SimpleTextChannel::sendMessageCallback(const Tp::MessagePartList &messag
 }
 
 void SimpleTextChannel::on_pageLoad_finished(bool ok){
-    QWebFrame* frame = view.page()->mainFrame();
-    QWebElementCollection collection = frame->findAllElements("textarea[name=message_body]");
+    
+    QWebElementCollection email = qWebView.page()->currentFrame()->findAllElements("input[id=\"email\"]");
+    email[0].setAttribute("value", ""); //email
+    QWebElementCollection pass = qWebView.page()->currentFrame()->findAllElements("input[id=\"pass\"]");
+    pass[0].setAttribute("value", ""); //password
+    int pixelsToScrolRight=300;
+    qWebView.page()->currentFrame()->setScrollBarValue(Qt::Horizontal,pixelsToScrolRight);
+    QWebElementCollection sendButton = qWebView.page()->currentFrame()->findAllElements("type[id=submit");
+    QMouseEvent pressEvent(QEvent::MouseButtonPress, sendButton[0].geometry().center(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+    sendButton[0].evaluateJavaScript("this.click()");
+    
+    
+}
+
+void SimpleTextChannel::on_pageLoad_finished2(bool ok){
+    
+    QWebElementCollection collection = qWebView.page()->currentFrame()->findAllElements("input[name=message_body]");
     foreach (QWebElement element, collection)
         element.setAttribute("value", "Prueba de mandar mensajesss!! Vamos, que funciona! :D");
     // find search button
-    QWebElementCollection sendButton = frame->findAllElements("input[id=u_0_r]");
+    QWebElementCollection sendButton = qWebView.page()->currentFrame()->findAllElements("input[id=u_0_r]");
     QMouseEvent event0(QEvent::MouseButtonPress, sendButton.at(0).geometry().center(), Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
 }
